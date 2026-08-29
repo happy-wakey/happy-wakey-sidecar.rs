@@ -161,7 +161,7 @@ pub fn probe_once(endpoint: &ProbeEndpoint) -> Result<(), ProbeError> {
 
 #[cfg(test)]
 mod tests {
-    use std::net::{IpAddr, Ipv4Addr, TcpListener};
+    use std::net::{IpAddr, Ipv4Addr, Shutdown, TcpListener};
 
     use super::*;
 
@@ -171,11 +171,24 @@ mod tests {
         let address = listener.local_addr().unwrap();
         let server = thread::spawn(move || {
             let (mut socket, _) = listener.accept().unwrap();
-            let mut request = [0_u8; 512];
-            let _ = socket.read(&mut request).unwrap();
+            socket
+                .set_read_timeout(Some(Duration::from_secs(2)))
+                .unwrap();
+            let mut request = Vec::new();
+            while !request.windows(4).any(|window| window == b"\r\n\r\n") {
+                let mut chunk = [0_u8; 128];
+                let received = socket.read(&mut chunk).unwrap();
+                assert!(received > 0);
+                request.extend_from_slice(&chunk[..received]);
+                assert!(request.len() <= 1024);
+            }
             socket
                 .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok")
                 .unwrap();
+            socket.flush().unwrap();
+            socket.shutdown(Shutdown::Write).unwrap();
+            let mut drain = [0_u8; 32];
+            while socket.read(&mut drain).is_ok_and(|received| received > 0) {}
         });
         let endpoint = ProbeEndpoint {
             address,
