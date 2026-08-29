@@ -1,0 +1,42 @@
+name: rust-ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: happy-wakey-sidecar-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.88.0 --profile minimal --component rustfmt,clippy
+      - name: Format
+        run: cargo +1.88.0 fmt --all -- --check
+      - name: Test
+        run: cargo +1.88.0 test --all-targets --locked
+      - name: Clippy
+        run: cargo +1.88.0 clippy --all-targets --locked -- -D warnings
+      - name: Release build
+        run: cargo +1.88.0 build --release --locked --bin happy-wakey-sidecar
+      - name: Verify flags-2-env generated contracts
+        run: |
+          git clone https://github.com/ORESoftware/flags-2-env /tmp/flags-2-env
+          git -C /tmp/flags-2-env checkout 7968e620f1ba7e789e2cbc6d3fdfd532056ef175
+          make -C /tmp/flags-2-env build/flags2env
+          FLAGS2ENV_BIN=/tmp/flags-2-env/build/flags2env scripts/check-generated.sh
+      - name: Typecheck formal reducer
+        run: |
+          npx --yes @informalsystems/quint@0.32.0 typecheck formal/sidecar_lifecycle.qnt
+          npx --yes @informalsystems/quint@0.32.0 run formal/sidecar_lifecycle.qnt --invariant sidecar_safety --max-samples 10000 --max-steps 30 --verbosity 1

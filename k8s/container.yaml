@@ -1,0 +1,42 @@
+name: happy-wakey-sidecar
+image: ghcr.io/happy-wakey/happy-wakey-sidecar:0.1.0
+args: []
+env:
+  - name: HAPPY_WAKEY_SIDECAR_BIND
+    value: 127.0.0.1:9090
+  - name: HAPPY_WAKEY_SIDECAR_PRODUCT_KIND
+    value: api
+  - name: HAPPY_WAKEY_SIDECAR_PRODUCT_PROBE_URL
+    value: http://127.0.0.1:8080/healthz
+  - name: HAPPY_WAKEY_SHARED_AUTH_BASE_URL
+    value: http://shared-auth.auth.svc
+  - name: HAPPY_WAKEY_OPTO_SYNC_BASE_URL
+    value: http://happy-wakey-sync.sync.svc
+ports:
+  - name: diagnostics
+    containerPort: 9090
+    protocol: TCP
+startupProbe:
+  exec:
+    command: [/usr/local/bin/happy-wakey-sidecar, probe-healthz]
+  periodSeconds: 2
+  failureThreshold: 30
+livenessProbe:
+  exec:
+    command: [/usr/local/bin/happy-wakey-sidecar, probe-healthz]
+  periodSeconds: 10
+  failureThreshold: 3
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: [ALL]
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 65532
+resources:
+  requests:
+    cpu: 10m
+    memory: 16Mi
+  limits:
+    cpu: 100m
+    memory: 64Mi

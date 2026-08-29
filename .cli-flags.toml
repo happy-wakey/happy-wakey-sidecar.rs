@@ -1,0 +1,65 @@
+[identity]
+service = "happy-wakey-sidecar"
+type_name = "HappyWakeySidecarEnv"
+
+[help]
+url = "https://github.com/happy-wakey/happy-wakey-sidecar.rs"
+columns = ["options", "env", "type", "default", "description"]
+
+[parse]
+allow_unknown = false
+
+[env]
+load = false
+
+[flags.bind]
+env = "HAPPY_WAKEY_SIDECAR_BIND"
+long = "bind"
+type = "string"
+default = "127.0.0.1:9090"
+help = "Loopback HTTP listener for inherited health, readiness, and metrics probes."
+
+[flags.product-kind]
+env = "HAPPY_WAKEY_SIDECAR_PRODUCT_KIND"
+long = "product-kind"
+type = "string"
+help = "Product process next to this sidecar: api or web."
+
+[flags.product-probe-url]
+env = "HAPPY_WAKEY_SIDECAR_PRODUCT_PROBE_URL"
+long = "product-probe-url"
+type = "string"
+help = "Credential-free loopback HTTP health endpoint for the adjacent product process."
+
+[flags.shared-auth-base-url]
+env = "HAPPY_WAKEY_SHARED_AUTH_BASE_URL"
+long = "shared-auth-base-url"
+type = "string"
+help = "Shared Auth authority URL; no credential is accepted by this sidecar."
+
+[flags.opto-sync-base-url]
+env = "HAPPY_WAKEY_OPTO_SYNC_BASE_URL"
+long = "opto-sync-base-url"
+type = "string"
+help = "Opto Sync authority URL; no write token is accepted by this sidecar."
+
+[flags.interval-ms]
+env = "HAPPY_WAKEY_SIDECAR_INTERVAL_MS"
+long = "interval-ms"
+type = "integer"
+default = 2000
+help = "Milliseconds between sequential product probes."
+
+[flags.success-threshold]
+env = "HAPPY_WAKEY_SIDECAR_SUCCESS_THRESHOLD"
+long = "success-threshold"
+type = "integer"
+default = 2
+help = "Consecutive successful probes required to enter Ready."
+
+[flags.failure-threshold]
+env = "HAPPY_WAKEY_SIDECAR_FAILURE_THRESHOLD"
+long = "failure-threshold"
+type = "integer"
+default = 3
+help = "Consecutive failed probes required to enter Degraded."
