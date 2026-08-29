@@ -1,0 +1,32 @@
+[package]
+org = "happy-wakey"
+name = "happy-wakey-sidecar"
+version = "0.1.0"
+description = "Fail-closed Happy Wakey Kubernetes sidecar"
+license = "MIT"
+keywords = ["sidecar", "rust", "kubernetes", "shared-auth", "opto-sync", "opentelemetry"]
+language = "rust"
+
+[package.repository]
+vcs = "git"
+url = "https://github.com/happy-wakey/happy-wakey-sidecar.rs"
+
+[dependencies]
+"ores-otel/ores-otel-sidecar" = "^0.1.0"
+"shared-auth/shared-auth-interfaces" = "^0.1.0"
+"opto-sync/opto-sync-interfaces" = "^0.1.0"
+"ORESoftware/flags-2-env" = "^0.1.0"
+
+[build]
+command = "cargo build --release --locked --bin happy-wakey-sidecar"
+outputs = ["target/release/happy-wakey-sidecar"]
+
+[bin]
+happy-wakey-sidecar = "target/release/happy-wakey-sidecar"
+
+[install]
+adapter = "none"
+
+[scripts]
+test = "cargo test --all-targets --locked"
+formal = "npx --yes @informalsystems/quint@0.32.0 typecheck formal/sidecar_lifecycle.qnt && npx --yes @informalsystems/quint@0.32.0 run formal/sidecar_lifecycle.qnt --invariant sidecar_safety --max-samples 10000 --max-steps 30"
