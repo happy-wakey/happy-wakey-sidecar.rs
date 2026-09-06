@@ -1,0 +1,14 @@
+# GENERATED from Dockerfile (sha256:411ae66c1383ef51) by ores-gha-workflows/scripts/render-dkf.mjs — target linux/arm64. Do not edit; edit Dockerfile and re-render.
+FROM --platform=linux/arm64 rust:1.88.0-bookworm AS build
+ARG TARGETARCH
+WORKDIR /src
+COPY Cargo.toml Cargo.lock ./
+COPY src ./src
+RUN cargo build --release --locked --bin happy-wakey-sidecar
+
+FROM --platform=linux/arm64 debian:bookworm-slim
+RUN useradd --system --uid 65532 --no-create-home --shell /usr/sbin/nologin sidecar
+COPY --from=build /src/target/release/happy-wakey-sidecar /usr/local/bin/happy-wakey-sidecar
+USER 65532:65532
+EXPOSE 9090
+ENTRYPOINT ["/usr/local/bin/happy-wakey-sidecar"]
