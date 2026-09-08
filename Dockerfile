@@ -2,6 +2,7 @@ FROM rust:1.88.0-bookworm AS build
 WORKDIR /src
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
+COPY generated/rust ./generated/rust
 RUN cargo build --release --locked --bin happy-wakey-sidecar
 
 FROM debian:bookworm-slim

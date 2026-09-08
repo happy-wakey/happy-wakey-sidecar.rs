@@ -1,9 +1,10 @@
-# GENERATED from Dockerfile (sha256:411ae66c1383ef51) by ores-gha-workflows/scripts/render-dkf.mjs — target linux/arm64. Do not edit; edit Dockerfile and re-render.
+# GENERATED from Dockerfile (sha256:ea51563076462d2f) by ores-gha-workflows/scripts/render-dkf.mjs — target linux/arm64. Do not edit; edit Dockerfile and re-render.
 FROM --platform=linux/arm64 rust:1.88.0-bookworm AS build
 ARG TARGETARCH
 WORKDIR /src
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
+COPY generated/rust ./generated/rust
 RUN cargo build --release --locked --bin happy-wakey-sidecar
 
 FROM --platform=linux/arm64 debian:bookworm-slim

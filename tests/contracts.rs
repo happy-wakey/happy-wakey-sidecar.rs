@@ -48,3 +48,15 @@ fn formal_and_runtime_phase_names_remain_aligned() {
         assert!(model.contains(phase));
     }
 }
+
+#[test]
+fn container_builds_include_the_generated_rust_contract() {
+    for dockerfile in [
+        include_str!("../Dockerfile"),
+        include_str!("../Dockerfile.arm64.dkf"),
+        include_str!("../Dockerfile.x86-64.dkf"),
+    ] {
+        assert!(dockerfile.contains("COPY generated/rust ./generated/rust"));
+        assert!(!dockerfile.contains("COPY generated ./generated"));
+    }
+}
