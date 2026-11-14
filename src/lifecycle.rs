@@ -95,7 +95,10 @@ impl Machine {
             (Phase::Probing | Phase::Ready | Phase::Degraded, Event::ProbeSucceeded) => {
                 let successes = before.consecutive_successes.saturating_add(1);
                 Snapshot {
-                    phase: if successes >= self.success_threshold {
+                    // A previously certified Ready sidecar must not flap to
+                    // Probing when a single transient failure is followed by
+                    // success before the failure threshold is reached.
+                    phase: if before.phase == Phase::Ready || successes >= self.success_threshold {
                         Phase::Ready
                     } else {
                         Phase::Probing
@@ -166,6 +169,30 @@ mod tests {
             Phase::Ready
         );
         assert_eq!(machine.snapshot().probe_generation, 6);
+    }
+
+    #[test]
+    fn intermittent_probe_failure_does_not_unready_healthy_sidecar() {
+        let mut machine = Machine::new(2, 3);
+        machine.apply(Event::Configured).unwrap();
+        machine.apply(Event::ProbeSucceeded).unwrap();
+        machine.apply(Event::ProbeSucceeded).unwrap();
+        assert!(machine.is_ready());
+
+        machine.apply(Event::ProbeFailed).unwrap();
+        assert!(machine.is_ready());
+        machine.apply(Event::ProbeSucceeded).unwrap();
+        assert_eq!(machine.snapshot().phase, Phase::Ready);
+        assert!(machine.snapshot().ready_certified);
+        assert!(machine.is_ready());
+        assert_eq!(machine.snapshot().consecutive_failures, 0);
+
+        // Continuous failures still eventually withdraw readiness.
+        for _ in 0..3 {
+            machine.apply(Event::ProbeFailed).unwrap();
+        }
+        assert_eq!(machine.snapshot().phase, Phase::Degraded);
+        assert!(!machine.is_ready());
     }
 
     #[test]
